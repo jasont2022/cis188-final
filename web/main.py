@@ -9,10 +9,11 @@ import motor.motor_asyncio
 
 app = FastAPI()
 # templates = Jinja2Templates(directory="/templates")
-client =  motor.motor_asyncio.AsyncIOMotorClient(
+client = motor.motor_asyncio.AsyncIOMotorClient(
     "mongodb+srv://jastran:imbooster456@cluster0.ceer1.mongodb.net/blog?retryWrites=true&w=majority"
 )
 db = client.blog
+
 
 class PyObjectId(ObjectId):
     @classmethod
@@ -28,6 +29,7 @@ class PyObjectId(ObjectId):
     @classmethod
     def __modify_schema__(cls, field_schema):
         field_schema.update(type="string")
+
 
 class Post(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
@@ -59,8 +61,8 @@ class User(BaseModel):
         json_encoders = {ObjectId: str}
         schema_extra = {"example": {"user": "jason", "posts": []}}
 
+
 class UpdatePost(BaseModel):
-    author: Optional[str]
     title: Optional[str]
     text: Optional[str]
 
@@ -75,15 +77,6 @@ class UpdatePost(BaseModel):
             }
         }
 
-class UpdateUser(BaseModel):
-    user: Optional[str]
-    posts: Optional[List[Post]]
-
-    class Config:
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-        schema_extra = {"example": {"user": "jason", "posts": []}}
-
 
 @app.get("/hello")
 def hello_view(name: str = "Jason"):
@@ -93,14 +86,11 @@ def hello_view(name: str = "Jason"):
 # home page (display all posts)
 @app.get("/")
 async def fetch_posts(request: Request):
-    posts = await db["posts"].find().to_list(1000)
-    print(posts)
-    # return {
-    #     "message": "successfully retrieve posts",
-    #     "request": request,
-    #     "posts": posts,
-    # }
-    return posts
+    posts = await db["post"].find().to_list(1000)
+    return {
+        "message": "successfully retrieve posts",
+        "posts": posts,
+    }
 
 
 # create a user
@@ -109,63 +99,99 @@ async def create_user(request: Request, user: User = Body(...)):
     user = jsonable_encoder(user)
     new_user = await db["user"].insert_one(user)
     created_user = await db["user"].find_one({"_id": new_user.inserted_id})
-    print(created_user)
-    # return {
-    #     "message": "successfully created a new user",
-    #     "request": request,
-    #     "new_user": created_user,
-    # }
-    return created_user
+    return {
+        "message": "successfully created a new user",
+        "new_user": created_user,
+    }
 
 
 # get a user (show user's posts)
 @app.get("/user/{name}")
 async def get_user(request: Request, name: str):
     if (user := await db["user"].find_one({"user": name})) is not None:
-        user_posts = user['posts']
-        return user_posts
+        user_posts = user["posts"]
+        return {
+            "message": f"successfully retrevied {name}'s posts",
+            "user_posts": user_posts,
+        }
     raise HTTPException(status_code=404, detail=f"User with {name} not found")
 
+
 # read a post (show a single post)
-@app.get("/post/{id}", response_model=Post)
+@app.get("/post/{id}")
 async def get_post(request: Request, id: str):
     if (post := await db["post"].find_one({"_id": id})) is not None:
-        return post
+        return {
+            "message": f"successfully retrevied post {id}",
+            "post": post,
+        }
     raise HTTPException(status_code=404, detail=f"Post with {id} not found")
 
 
 # create a post
-@app.post("/user/{name}/post/create", response_model=Post)
+@app.post("/user/{name}/post")
 async def create_post(request: Request, name: str, post: Post = Body(...)):
-    post = jsonable_encoder(post)
-    new_post = await db["post"].insert_one(post)
-    created_post = await db["post"].find_one({"_id": new_post.inserted_id})
+    if (user := await db["user"].find_one({"user": name})) is not None:
+        # insert the post document to the collection
+        post = jsonable_encoder(post)
+        new_post = await db["post"].insert_one(post)
+        created_post = await db["post"].find_one({"_id": new_post.inserted_id})
 
-    # update user post array
-    user =  await db["user"].find_one({"user": name})
-    new_posts = user['posts'].append(post)
-    print(created_post)
-    # return {
-    #     "message": "successfully created a new user",
-    #     "request": request,
-    #     "new_user": created_user,
-    # }
-    # return JSONResponse(status_code=status.HTTP_201_CREATED, content=created_user)
-    return created_post
+        # update user posts array
+        post_list = list(user["posts"])
+        post_list.append(created_post)
+        await db["user"].update_one({"user": name}, {"$set": {"posts": post_list}})
+
+        return {
+            "message": "successfully created a new post",
+            "new_post": created_post,
+        }
+    raise HTTPException(status_code=404, detail=f"User with {name} not found")
 
 
 # edit a post
-@app.put("/user/{name}/post/{id}/edit")
-def edit_post(request: Request):
-    return {}
+@app.put("/user/{name}/post/{id}")
+async def edit_post(request: Request, name: str, id: str, post: UpdatePost = Body(...)):
+    if (user := await db["user"].find_one({"user": name})) is not None:
+        if (old_post := await db["post"].find_one({"_id": id})) is not None:
+            post = {k: v for k, v in post.dict().items() if v is not None}
+
+            # edit the post itself
+            await db["post"].update_one({"_id": id}, {"$set": post})
+            modified_post = await db["post"].find_one({"_id": id})
+
+            # update user posts array
+            user = await db["user"].find_one({"user": name})
+            post_list = list(user["posts"])
+            post_list.remove(old_post)
+            post_list.append(modified_post)
+            await db["user"].update_one({"user": name}, {"$set": {"posts": post_list}})
+
+            return {
+                "message": f"successfully modfided the post {id}",
+                "modified_post": modified_post,
+            }
+        else:
+            raise HTTPException(status_code=404, detail=f"Post with {id} not found")
+    raise HTTPException(status_code=404, detail=f"User with {name} not found")
 
 
 # delete a post
-@app.delete("user/{name}/post/{id}/delete")
+@app.delete("/user/{name}/post/{id}")
 async def delete_post(request: Request, name: str, id: str):
-    delete_result = await db["post"].delete_one({"_id": id})
-    if delete_result.deleted_count == 1:
-        return {
-            "message": "successfully deleted the post"
-        }
-    raise HTTPException(status_code=404, detail=f"Post with {id} not found")
+    if (user := await db["user"].find_one({"user": name})) is not None:
+        if (old_post := await db["post"].find_one({"_id": id})) is not None:
+
+            # delete a post
+            await db["post"].delete_one({"_id": id})
+
+            # update user posts array
+            user = await db["user"].find_one({"user": name})
+            post_list = list(user["posts"])
+            post_list.remove(old_post)
+            await db["user"].update_one({"user": name}, {"$set": {"posts": post_list}})
+
+            return {"message": f"successfully deleted the post {id}"}
+        else:
+            raise HTTPException(status_code=404, detail=f"Post with {id} not found")
+    raise HTTPException(status_code=404, detail=f"User with {name} not found")
