@@ -1,11 +1,12 @@
-from fastapi import FastAPI, Body, HTTPException, Form, Request, status
+from typing import List, Optional
+
+import motor.motor_asyncio
+from bson import ObjectId
+from fastapi import Body, FastAPI, Form, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
-from bson import ObjectId
-from typing import Optional, List
-import motor.motor_asyncio
 
 app = FastAPI()
 # templates = Jinja2Templates(directory="/templates")
