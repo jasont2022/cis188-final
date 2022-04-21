@@ -2,7 +2,7 @@ from typing import List, Optional
 
 import motor.motor_asyncio
 from bson import ObjectId
-from fastapi import Body, FastAPI, Form, HTTPException, Request, status
+from fastapi import Body, FastAPI, Form, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
