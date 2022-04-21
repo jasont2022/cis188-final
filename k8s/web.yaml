@@ -15,6 +15,7 @@ spec:
     spec:
       containers:
         - name: web
+        # for deployment change image below to the deployed image, TROUBLE: tag of image
           image: blog:v1
           ports:
             - containerPort: 8000

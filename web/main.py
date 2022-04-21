@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 app = FastAPI()
 # templates = Jinja2Templates(directory="/templates")
 client = motor.motor_asyncio.AsyncIOMotorClient(
-    "mongodb+srv://jastran:imbooster456@cluster0.ceer1.mongodb.net/blog?retryWrites=true&w=majority"
+    "mongodb+srv://jastran:KUoKDfppSLOFCqZA@cluster0.ceer1.mongodb.net/blog?retryWrites=true&w=majority"
 )
 db = client.blog
 
