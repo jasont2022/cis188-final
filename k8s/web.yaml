@@ -15,10 +15,13 @@ spec:
     spec:
       containers:
         - name: web
-        # for deployment change image below to the deployed image, TROUBLE: tag of image
+        # need to change this for cloud version
           image: blog:v1
           ports:
             - containerPort: 8000
+          env:
+            - name: MONGODB_CONNSTRING
+              value: mongodb://mongodb/blog
 
 ---
 apiVersion: v1
