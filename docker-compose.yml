@@ -5,5 +5,16 @@ services:
     image: blog:v1
     build: ./web
     command: poetry run uvicorn main:app --host 0.0.0.0 --port 8000
+    environment:
+      - MONGODB_CONNSTRING=mongodb://mongodb/blog
     ports:
       - "8000:8000"
+    depends_on:
+      - mongodb
+  
+  mongodb:
+    image: mongo:5.0.6
+    ports:
+      - 27017:27017
+    volumes:
+      - ./data:/data/db

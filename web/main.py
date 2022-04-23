@@ -1,3 +1,4 @@
+import os
 from typing import List, Optional
 
 import motor.motor_asyncio
@@ -10,9 +11,8 @@ from pydantic import BaseModel, Field
 
 app = FastAPI()
 # templates = Jinja2Templates(directory="/templates")
-client = motor.motor_asyncio.AsyncIOMotorClient(
-    "mongodb+srv://jastran:KUoKDfppSLOFCqZA@cluster0.ceer1.mongodb.net/blog?retryWrites=true&w=majority"
-)
+conn = os.environ["MONGODB_CONNSTRING"]
+client = motor.motor_asyncio.AsyncIOMotorClient(conn)
 db = client.blog
 
 
