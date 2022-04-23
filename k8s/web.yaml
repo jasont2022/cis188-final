@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
         - name: web
-        # need to change this for cloud version
-          image: blog:v1
+          # replace image for web depending on local or cloud kube
+          image: ghcr.io/jasont2022/cis188-final/web:${{ github.sha }}
           ports:
             - containerPort: 8000
           env:
