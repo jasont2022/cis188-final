@@ -2,24 +2,9 @@ name: Blog
 on: push
 
 jobs:
-  test:
-    name: Test application
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - run: |
-          pip install poetry
-          cd web
-          poetry install
-          poetry run pytest
-
   build:
     name: Build and publish docker image
     runs-on: ubuntu-latest
-    needs: test
 
     steps:
       - name: Checkout code
