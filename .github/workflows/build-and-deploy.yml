@@ -28,7 +28,7 @@ jobs:
         with:
           # push: ${{ github.ref == 'refs/heads/master' }}
           push: true
-          tags: ghcr.io/jasont2022/cis188-final/web:${{ github.sha }}
+          tags: ghcr.io/jasont2022/cis188-final/web:v1
           context: web
 
   # deploy:
