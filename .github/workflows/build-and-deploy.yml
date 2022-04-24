@@ -26,7 +26,8 @@ jobs:
       - name: Build and push Docker images
         uses: docker/build-push-action@v2.10.0
         with:
-          push: ${{ github.ref == 'refs/heads/master' }}
+          # push: ${{ github.ref == 'refs/heads/master' }}
+          push: true
           tags: ghcr.io/jasont2022/cis188-final/web:${{ github.sha }}
           context: web
 
