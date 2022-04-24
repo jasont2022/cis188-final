@@ -47,11 +47,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       
-      - name: Get a kubeconfig from AWS
+      - name: Deploy to Cluster
         run: |
           aws eks --region us-east-1 update-kubeconfig --name cis188 --role-arn arn:aws:iam::474844133309:role/jastran --alias cis188
           kubectl config set-context --current --namespace=jastran
-
-      - name: Deploy to Cluster
-        run: |
           kubectl apply -f k8s/

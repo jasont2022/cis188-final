@@ -1,9 +1,0 @@
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: mongo-pv
-spec:
-  capacity:
-    storage: 30Gi
-  accessModes:
-    - ReadWriteMany
