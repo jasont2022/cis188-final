@@ -3,14 +3,11 @@ from typing import List, Optional
 
 import motor.motor_asyncio
 from bson import ObjectId
-from fastapi import Body, FastAPI, Form, HTTPException, Request
+from fastapi import Body, FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 app = FastAPI()
-# templates = Jinja2Templates(directory="/templates")
 conn = os.environ["MONGODB_CONNSTRING"]
 client = motor.motor_asyncio.AsyncIOMotorClient(conn)
 db = client.blog
@@ -86,7 +83,7 @@ def hello_view(name: str = "Jason"):
 
 # home page (display all posts)
 @app.get("/")
-async def fetch_posts(request: Request):
+async def fetch_posts():
     posts = await db["post"].find().to_list(1000)
     return {
         "message": "successfully retrieve posts",
@@ -96,7 +93,7 @@ async def fetch_posts(request: Request):
 
 # create a user
 @app.post("/signup")
-async def create_user(request: Request, user: User = Body(...)):
+async def create_user(user: User = Body(...)):
     user = jsonable_encoder(user)
     new_user = await db["user"].insert_one(user)
     created_user = await db["user"].find_one({"_id": new_user.inserted_id})
@@ -108,7 +105,7 @@ async def create_user(request: Request, user: User = Body(...)):
 
 # get a user (show user's posts)
 @app.get("/user/{name}")
-async def get_user(request: Request, name: str):
+async def get_user(name: str):
     if (user := await db["user"].find_one({"user": name})) is not None:
         user_posts = user["posts"]
         return {
@@ -120,7 +117,7 @@ async def get_user(request: Request, name: str):
 
 # read a post (show a single post)
 @app.get("/post/{id}")
-async def get_post(request: Request, id: str):
+async def get_post(id: str):
     if (post := await db["post"].find_one({"_id": id})) is not None:
         return {
             "message": f"successfully retrevied post {id}",
@@ -131,7 +128,7 @@ async def get_post(request: Request, id: str):
 
 # create a post
 @app.post("/user/{name}/post")
-async def create_post(request: Request, name: str, post: Post = Body(...)):
+async def create_post(name: str, post: Post = Body(...)):
     if (user := await db["user"].find_one({"user": name})) is not None:
         # insert the post document to the collection
         post = jsonable_encoder(post)
@@ -152,7 +149,7 @@ async def create_post(request: Request, name: str, post: Post = Body(...)):
 
 # edit a post
 @app.put("/user/{name}/post/{id}")
-async def edit_post(request: Request, name: str, id: str, post: UpdatePost = Body(...)):
+async def edit_post(name: str, id: str, post: UpdatePost = Body(...)):
     if (user := await db["user"].find_one({"user": name})) is not None:
         if (old_post := await db["post"].find_one({"_id": id})) is not None:
             post = {k: v for k, v in post.dict().items() if v is not None}
@@ -179,7 +176,7 @@ async def edit_post(request: Request, name: str, id: str, post: UpdatePost = Bod
 
 # delete a post
 @app.delete("/user/{name}/post/{id}")
-async def delete_post(request: Request, name: str, id: str):
+async def delete_post(name: str, id: str):
     if (user := await db["user"].find_one({"user": name})) is not None:
         if (old_post := await db["post"].find_one({"_id": id})) is not None:
 

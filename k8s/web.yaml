@@ -15,7 +15,6 @@ spec:
     spec:
       containers:
         - name: web
-          # replace image for web depending on local or cloud kube
           image: ghcr.io/jasont2022/cis188-final/blog:v1
           ports:
             - containerPort: 8000
